@@ -61,7 +61,7 @@ class OperationsLocalTestCase: XCTestCase {
             XCTAssertEqual(operationsResponse.links.prev?.href, "https://horizon-testnet.stellar.org/operations?order=asc&limit=19&cursor=32069369748004865-2")
             XCTAssertNil(operationsResponse.links.prev?.templated)
             
-            XCTAssertEqual(operationsResponse.records.count, 12)
+            XCTAssertEqual(operationsResponse.records.count, 13)
             
             for record in operationsResponse.records {
                 switch record.operationType {
@@ -78,8 +78,14 @@ class OperationsLocalTestCase: XCTestCase {
                         XCTAssert(false)
                     }
                 case .pathPayment:
-                    if record is PathPaymentOperationResponse {
-                        validatePathPaymentOperationResponse(operationResponse: record as! PathPaymentOperationResponse)
+                    if record is PathPaymentStrictReceiveOperationResponse {
+                        validatePathPaymentStrictReceiveOperationResponse(operationResponse: record as! PathPaymentStrictReceiveOperationResponse)
+                    } else {
+                        XCTAssert(false)
+                    }
+                case .pathPaymentStrictSend:
+                    if record is PathPaymentStrictSendOperationResponse {
+                        validatePathPaymentStrictSendOperationResponse(operationResponse: record as! PathPaymentStrictSendOperationResponse)
                     } else {
                         XCTAssert(false)
                     }
@@ -222,7 +228,7 @@ class OperationsLocalTestCase: XCTestCase {
             XCTAssertEqual(operationResponse.to, "GBIA4FH6TV64KSPDAJCNUQSM7PFL4ILGUVJDPCLUOPJ7ONMKBBVUQHRO")
         }
         
-        func validatePathPaymentOperationResponse(operationResponse: PathPaymentOperationResponse) {
+        func validatePathPaymentStrictReceiveOperationResponse(operationResponse: PathPaymentStrictReceiveOperationResponse) {
             XCTAssertNotNil(operationResponse.links)
             XCTAssertNotNil(operationResponse.links.effects)
             XCTAssertEqual(operationResponse.links.effects.href, "https://horizon-testnet.stellar.org/operations/77309415424/effects/{?cursor,limit,order}")
@@ -251,7 +257,7 @@ class OperationsLocalTestCase: XCTestCase {
             XCTAssertEqual(operationResponse.createdAt, createdAt)
             XCTAssertEqual(operationResponse.transactionHash, "5b422945c99ec8bd8b29b0086aeb89027a774be54e8663d3fa538775cde8b51d")
             
-            XCTAssertEqual(operationResponse.operationTypeString, "path_payment")
+            XCTAssertEqual(operationResponse.operationTypeString, "path_payment_strict_receive")
             XCTAssertEqual(operationResponse.operationType, OperationType.pathPayment)
             XCTAssertEqual(operationResponse.amount, "100.0")
             XCTAssertEqual(operationResponse.sourceAmount, "50.0")
@@ -260,9 +266,54 @@ class OperationsLocalTestCase: XCTestCase {
             XCTAssertNil(operationResponse.assetIssuer)
             XCTAssertEqual(operationResponse.from, "GDWGJSTUVRNFTR7STPUUHFWQYAN6KBVWCZT2YN7MY276GCSSXSWPS6JY")
             XCTAssertEqual(operationResponse.to, "GBIA4FH6TV64KSPDAJCNUQSM7PFL4ILGUVJDPCLUOPJ7ONMKBBVUQHRO")
-            XCTAssertEqual(operationResponse.sendAssetType, AssetTypeAsString.CREDIT_ALPHANUM4)
-            XCTAssertEqual(operationResponse.sendAssetCode, "EUR")
-            XCTAssertEqual(operationResponse.sendAssetIssuer, "GAZN3PPIDQCSP5JD4ETQQQ2IU2RMFYQTAL4NNQZUGLLO2XJJJ3RDSDGA")
+            XCTAssertEqual(operationResponse.sourceAssetType, AssetTypeAsString.CREDIT_ALPHANUM4)
+            XCTAssertEqual(operationResponse.sourceAssetCode, "EUR")
+            XCTAssertEqual(operationResponse.sourceMax, "50.0")
+            XCTAssertEqual(operationResponse.sourceAssetIssuer, "GAZN3PPIDQCSP5JD4ETQQQ2IU2RMFYQTAL4NNQZUGLLO2XJJJ3RDSDGA")
+        }
+        
+        func validatePathPaymentStrictSendOperationResponse(operationResponse: PathPaymentStrictSendOperationResponse) {
+            XCTAssertNotNil(operationResponse.links)
+            XCTAssertNotNil(operationResponse.links.effects)
+            XCTAssertEqual(operationResponse.links.effects.href, "https://horizon-testnet.stellar.org/operations/77309415424/effects/{?cursor,limit,order}")
+            XCTAssertEqual(operationResponse.links.effects.templated, true)
+            
+            XCTAssertNotNil(operationResponse.links.succeeds)
+            XCTAssertEqual(operationResponse.links.succeeds.href, "https://horizon-testnet.stellar.org/operations?cursor=77309415424&order=desc")
+            XCTAssertNil(operationResponse.links.succeeds.templated)
+            
+            XCTAssertNotNil(operationResponse.links.precedes)
+            XCTAssertEqual(operationResponse.links.precedes.href, "https://horizon-testnet.stellar.org/operations?cursor=77309415424&order=asc")
+            XCTAssertNil(operationResponse.links.precedes.templated)
+            
+            XCTAssertNotNil(operationResponse.links.transaction)
+            XCTAssertEqual(operationResponse.links.transaction.href, "https://horizon-testnet.stellar.org/transactions/77309415424")
+            XCTAssertNil(operationResponse.links.transaction.templated)
+            
+            XCTAssertNotNil(operationResponse.links.selfLink)
+            XCTAssertEqual(operationResponse.links.selfLink.href, "https://horizon-testnet.stellar.org/operations/77309415424")
+            XCTAssertNil(operationResponse.links.selfLink.templated)
+            
+            XCTAssertEqual(operationResponse.id, "77309415424")
+            XCTAssertEqual(operationResponse.pagingToken, "77309415424")
+            XCTAssertEqual(operationResponse.sourceAccount, "GDWGJSTUVRNFTR7STPUUHFWQYAN6KBVWCZT2YN7MY276GCSSXSWPS6JY")
+            let createdAt = DateFormatter.iso8601.date(from:"2018-02-21T09:56:26Z")
+            XCTAssertEqual(operationResponse.createdAt, createdAt)
+            XCTAssertEqual(operationResponse.transactionHash, "5b422945c99ec8bd8b29b0086aeb89027a774be54e8663d3fa538775cde8b51d")
+            
+            XCTAssertEqual(operationResponse.operationTypeString, "path_payment_strict_send")
+            XCTAssertEqual(operationResponse.operationType, OperationType.pathPaymentStrictSend)
+            XCTAssertEqual(operationResponse.amount, "100.0")
+            XCTAssertEqual(operationResponse.sourceAmount, "50.0")
+            XCTAssertEqual(operationResponse.assetType, AssetTypeAsString.NATIVE)
+            XCTAssertNil(operationResponse.assetCode)
+            XCTAssertNil(operationResponse.assetIssuer)
+            XCTAssertEqual(operationResponse.from, "GDWGJSTUVRNFTR7STPUUHFWQYAN6KBVWCZT2YN7MY276GCSSXSWPS6JY")
+            XCTAssertEqual(operationResponse.to, "GBIA4FH6TV64KSPDAJCNUQSM7PFL4ILGUVJDPCLUOPJ7ONMKBBVUQHRO")
+            XCTAssertEqual(operationResponse.sourceAssetType, AssetTypeAsString.CREDIT_ALPHANUM4)
+            XCTAssertEqual(operationResponse.sourceAssetCode, "EUR")
+            XCTAssertEqual(operationResponse.destinationMin, "50.0")
+            XCTAssertEqual(operationResponse.sourceAssetIssuer, "GAZN3PPIDQCSP5JD4ETQQQ2IU2RMFYQTAL4NNQZUGLLO2XJJJ3RDSDGA")
         }
         
         func validateManageSellOfferOperationResponse(operationResponse: ManageSellOfferOperationResponse) {
@@ -296,7 +347,7 @@ class OperationsLocalTestCase: XCTestCase {
             
             XCTAssertEqual(operationResponse.operationTypeString, "manage_sell_offer")
             XCTAssertEqual(operationResponse.operationType, OperationType.manageSellOffer)
-            XCTAssertEqual(operationResponse.offerId, 77309415424)
+            XCTAssertEqual(operationResponse.offerId, "77309415424")
             XCTAssertEqual(operationResponse.amount, "100.0")
             XCTAssertEqual(operationResponse.price, "50.0")
             XCTAssertEqual(operationResponse.sellingAssetType, AssetTypeAsString.NATIVE)
@@ -338,7 +389,7 @@ class OperationsLocalTestCase: XCTestCase {
             
             XCTAssertEqual(operationResponse.operationTypeString, "manage_buy_offer")
             XCTAssertEqual(operationResponse.operationType, OperationType.manageBuyOffer)
-            XCTAssertEqual(operationResponse.offerId, 77309415424)
+            XCTAssertEqual(operationResponse.offerId, "77309415424")
             XCTAssertEqual(operationResponse.amount, "100.0")
             XCTAssertEqual(operationResponse.price, "50.0")
             XCTAssertEqual(operationResponse.sellingAssetType, AssetTypeAsString.NATIVE)
@@ -670,7 +721,8 @@ class OperationsLocalTestCase: XCTestCase {
         
         operationsResponseString.append(accountCreatedOperation)
         operationsResponseString.append("," + paymentOperation)
-        operationsResponseString.append("," + pathPaymentOperation)
+        operationsResponseString.append("," + pathPaymentStrictReceiveOperation)
+        operationsResponseString.append("," + pathPaymentStrictSendOperation)
         operationsResponseString.append("," + manageSellOfferOperation)
         operationsResponseString.append("," + manageBuyOfferOperation)
         operationsResponseString.append("," + createPassiveSellOfferOperation)
@@ -714,6 +766,7 @@ class OperationsLocalTestCase: XCTestCase {
                 },
                 "id": "77309415424",
                 "paging_token": "77309415424",
+                "transaction_successful": true,
                 "type_i": 0,
                 "type": "create_account",
                 "source_account": "GDWGJSTUVRNFTR7STPUUHFWQYAN6KBVWCZT2YN7MY276GCSSXSWPS6JY",
@@ -747,6 +800,7 @@ class OperationsLocalTestCase: XCTestCase {
                 },
                 "id": "77309415424",
                 "paging_token": "77309415424",
+                "transaction_successful": true,
                 "type_i": 1,
                 "type": "payment",
                 "source_account": "GDWGJSTUVRNFTR7STPUUHFWQYAN6KBVWCZT2YN7MY276GCSSXSWPS6JY",
@@ -761,7 +815,7 @@ class OperationsLocalTestCase: XCTestCase {
             }
     """
     
-    let pathPaymentOperation = """
+    let pathPaymentStrictReceiveOperation = """
             {
                 "_links": {
                     "effects": {
@@ -783,8 +837,9 @@ class OperationsLocalTestCase: XCTestCase {
                 },
                 "id": "77309415424",
                 "paging_token": "77309415424",
+                "transaction_successful": true,
                 "type_i": 2,
-                "type": "path_payment",
+                "type": "path_payment_strict_receive",
                 "source_account": "GDWGJSTUVRNFTR7STPUUHFWQYAN6KBVWCZT2YN7MY276GCSSXSWPS6JY",
                 "created_at": "2018-02-21T09:56:26Z",
                 "transaction_hash": "5b422945c99ec8bd8b29b0086aeb89027a774be54e8663d3fa538775cde8b51d",
@@ -793,9 +848,50 @@ class OperationsLocalTestCase: XCTestCase {
                 "source_amount": "50.0",
                 "from": "GDWGJSTUVRNFTR7STPUUHFWQYAN6KBVWCZT2YN7MY276GCSSXSWPS6JY",
                 "to": "GBIA4FH6TV64KSPDAJCNUQSM7PFL4ILGUVJDPCLUOPJ7ONMKBBVUQHRO",
-                "send_asset_type": "credit_alphanum4",
-                "send_asset_code": "EUR",
-                "send_asset_issuer": "GAZN3PPIDQCSP5JD4ETQQQ2IU2RMFYQTAL4NNQZUGLLO2XJJJ3RDSDGA"
+                "source_asset_type": "credit_alphanum4",
+                "source_asset_code": "EUR",
+                "source_asset_issuer": "GAZN3PPIDQCSP5JD4ETQQQ2IU2RMFYQTAL4NNQZUGLLO2XJJJ3RDSDGA",
+                "source_max": "50.0"
+            }
+    """
+    
+    let pathPaymentStrictSendOperation = """
+            {
+                "_links": {
+                    "effects": {
+                        "href": "https://horizon-testnet.stellar.org/operations/77309415424/effects/{?cursor,limit,order}",
+                        "templated": true
+                    },
+                    "precedes": {
+                        "href": "https://horizon-testnet.stellar.org/operations?cursor=77309415424&order=asc"
+                    },
+                    "self": {
+                        "href": "https://horizon-testnet.stellar.org/operations/77309415424"
+                    },
+                    "succeeds": {
+                        "href": "https://horizon-testnet.stellar.org/operations?cursor=77309415424&order=desc"
+                    },
+                    "transaction": {
+                        "href": "https://horizon-testnet.stellar.org/transactions/77309415424"
+                    }
+                },
+                "id": "77309415424",
+                "paging_token": "77309415424",
+                "transaction_successful": true,
+                "type_i": 13,
+                "type": "path_payment_strict_send",
+                "source_account": "GDWGJSTUVRNFTR7STPUUHFWQYAN6KBVWCZT2YN7MY276GCSSXSWPS6JY",
+                "created_at": "2018-02-21T09:56:26Z",
+                "transaction_hash": "5b422945c99ec8bd8b29b0086aeb89027a774be54e8663d3fa538775cde8b51d",
+                "asset_type": "native",
+                "amount": "100.0",
+                "source_amount": "50.0",
+                "from": "GDWGJSTUVRNFTR7STPUUHFWQYAN6KBVWCZT2YN7MY276GCSSXSWPS6JY",
+                "to": "GBIA4FH6TV64KSPDAJCNUQSM7PFL4ILGUVJDPCLUOPJ7ONMKBBVUQHRO",
+                "source_asset_type": "credit_alphanum4",
+                "source_asset_code": "EUR",
+                "source_asset_issuer": "GAZN3PPIDQCSP5JD4ETQQQ2IU2RMFYQTAL4NNQZUGLLO2XJJJ3RDSDGA",
+                "destination_min": "50.0"
             }
     """
     
@@ -821,12 +917,13 @@ class OperationsLocalTestCase: XCTestCase {
                 },
                 "id": "77309415424",
                 "paging_token": "77309415424",
+                "transaction_successful": true,
                 "type_i": 3,
                 "type": "manage_sell_offer",
                 "source_account": "GDWGJSTUVRNFTR7STPUUHFWQYAN6KBVWCZT2YN7MY276GCSSXSWPS6JY",
                 "created_at": "2018-02-21T09:56:26Z",
                 "transaction_hash": "5b422945c99ec8bd8b29b0086aeb89027a774be54e8663d3fa538775cde8b51d",
-                "offer_id": 77309415424,
+                "offer_id": "77309415424",
                 "amount": "100.0",
                 "price": "50.0",
                 "selling_asset_type": "native",
@@ -858,12 +955,13 @@ class OperationsLocalTestCase: XCTestCase {
                 },
                 "id": "77309415424",
                 "paging_token": "77309415424",
+                "transaction_successful": true,
                 "type_i": 12,
                 "type": "manage_buy_offer",
                 "source_account": "GDWGJSTUVRNFTR7STPUUHFWQYAN6KBVWCZT2YN7MY276GCSSXSWPS6JY",
                 "created_at": "2018-02-21T09:56:26Z",
                 "transaction_hash": "5b422945c99ec8bd8b29b0086aeb89027a774be54e8663d3fa538775cde8b51d",
-                "offer_id": 77309415424,
+                "offer_id": "77309415424",
                 "amount": "100.0",
                 "price": "50.0",
                 "selling_asset_type": "native",
@@ -895,6 +993,7 @@ class OperationsLocalTestCase: XCTestCase {
                 },
                 "id": "77309415424",
                 "paging_token": "77309415424",
+                "transaction_successful": true,
                 "type_i": 4,
                 "type": "create_passive_sell_offer",
                 "source_account": "GDWGJSTUVRNFTR7STPUUHFWQYAN6KBVWCZT2YN7MY276GCSSXSWPS6JY",
@@ -931,6 +1030,7 @@ class OperationsLocalTestCase: XCTestCase {
                 },
                 "id": "77309415424",
                 "paging_token": "77309415424",
+                "transaction_successful": true,
                 "type_i": 5,
                 "type": "set_options",
                 "source_account": "GDWGJSTUVRNFTR7STPUUHFWQYAN6KBVWCZT2YN7MY276GCSSXSWPS6JY",
@@ -968,6 +1068,7 @@ class OperationsLocalTestCase: XCTestCase {
                 },
                 "id": "77309415424",
                 "paging_token": "77309415424",
+                "transaction_successful": true,
                 "type_i": 6,
                 "type": "change_trust",
                 "source_account": "GDWGJSTUVRNFTR7STPUUHFWQYAN6KBVWCZT2YN7MY276GCSSXSWPS6JY",
@@ -1002,6 +1103,7 @@ class OperationsLocalTestCase: XCTestCase {
                 },
                 "id": "77309415424",
                 "paging_token": "77309415424",
+                "transaction_successful": true,
                 "type_i": 7,
                 "type": "allow_trust",
                 "source_account": "GDWGJSTUVRNFTR7STPUUHFWQYAN6KBVWCZT2YN7MY276GCSSXSWPS6JY",
@@ -1038,6 +1140,7 @@ class OperationsLocalTestCase: XCTestCase {
                 },
                 "id": "77309415424",
                 "paging_token": "77309415424",
+                "transaction_successful": true,
                 "type_i": 8,
                 "type": "account_merge",
                 "source_account": "GDWGJSTUVRNFTR7STPUUHFWQYAN6KBVWCZT2YN7MY276GCSSXSWPS6JY",
@@ -1070,6 +1173,7 @@ class OperationsLocalTestCase: XCTestCase {
                 },
                 "id": "77309415424",
                 "paging_token": "77309415424",
+                "transaction_successful": true,
                 "type_i": 9,
                 "type": "inflation",
                 "source_account": "GDWGJSTUVRNFTR7STPUUHFWQYAN6KBVWCZT2YN7MY276GCSSXSWPS6JY",
@@ -1100,6 +1204,7 @@ class OperationsLocalTestCase: XCTestCase {
                 },
                 "id": "77309415424",
                 "paging_token": "77309415424",
+                "transaction_successful": true,
                 "type_i": 10,
                 "type": "manage_data",
                 "source_account": "GDWGJSTUVRNFTR7STPUUHFWQYAN6KBVWCZT2YN7MY276GCSSXSWPS6JY",
@@ -1131,6 +1236,7 @@ class OperationsLocalTestCase: XCTestCase {
                 },
                     "id": "1743756726273",
                     "paging_token": "1743756726273",
+                    "transaction_successful": true,
                     "source_account": "GBHPJ3VMVT3X7Y6HIIAPK7YPTZCF3CWO4557BKGX2GVO4O7EZHIBELLH",
                     "created_at": "2018-02-21T09:56:26Z",
                     "type": "bump_sequence",
