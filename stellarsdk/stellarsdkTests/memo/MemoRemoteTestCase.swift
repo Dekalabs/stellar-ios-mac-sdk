@@ -43,7 +43,7 @@ class MemoRemoteTestCase: XCTestCase {
         memoWithPaymentTransaction(memo: Memo.id(12345678))
     }
     
-    func testMemoHash() {
+    /*func testMemoHash() {
         do {
             if let memo = try Memo(hash: Data(base64Encoded:"UQQWROg9ashoyElBi2OS3b6d9T8AAAAAAAAAAAAAAAA=")!) {
                 memoWithPaymentTransaction(memo: memo)
@@ -65,7 +65,7 @@ class MemoRemoteTestCase: XCTestCase {
         } catch {
             XCTAssert(false)
         }
-    }
+    }*/
     
     func memoWithPaymentTransaction(memo: Memo) {
         
@@ -114,6 +114,10 @@ class MemoRemoteTestCase: XCTestCase {
                             switch response {
                             case .success(_):
                                 print("SRP Test: Transaction successfully sent")
+                            case .destinationRequiresMemo(let destinationAccountId):
+                                print("SRP Test: Destination requires memo \(destinationAccountId)")
+                                XCTAssert(false)
+                                expectation.fulfill()
                             case .failure(let error):
                                 StellarSDKLog.printHorizonRequestErrorMessage(tag:"SRP Test", horizonRequestError:error)
                                 XCTAssert(false)
