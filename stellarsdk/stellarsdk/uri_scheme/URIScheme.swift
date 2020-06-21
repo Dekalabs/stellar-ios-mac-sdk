@@ -264,7 +264,11 @@ public class URIScheme: NSObject {
         sdk.accounts.getAccountDetails(accountId: signerAccountID) { (response) -> (Void) in
             switch response {
             case .success(details: let accountDetails):
-                let reconfiguredTransactionXDR = TransactionXDR(sourceAccount: accountDetails.keyPair.publicKey,
+                var muxedAccount = MuxedAccountXDR.ed25519(accountDetails.keyPair.publicKey.bytes)
+                if let muxi = try? signerAccountID.decodeMuxedAccount() {
+                    muxedAccount = muxi
+                }
+                let reconfiguredTransactionXDR = TransactionXDR(sourceAccount: muxedAccount,
                                                             seqNum: accountDetails.incrementedSequenceNumber(),
                                                             timeBounds: transactionXDR.timeBounds,
                                                             memo: transactionXDR.memo,

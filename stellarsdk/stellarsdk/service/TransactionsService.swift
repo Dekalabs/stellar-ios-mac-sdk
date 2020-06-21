@@ -38,7 +38,6 @@ public typealias CheckMemoRequiredResponseClosure = (_ response:CheckMemoRequire
 public class TransactionsService: NSObject {
     let serviceHelper: ServiceHelper
     let jsonDecoder = JSONDecoder()
-    //let sdk = StellarSDK()
     
     private override init() {
         serviceHelper = ServiceHelper(baseURL: "")
@@ -85,6 +84,21 @@ public class TransactionsService: NSObject {
     open func submitTransaction(transaction:Transaction, skipMemoRequiredCheck:Bool = false, response:@escaping TransactionPostResponseClosure) throws {
         let envelope = try transaction.encodedEnvelope()
         postTransaction(transactionEnvelope:envelope, skipMemoRequiredCheck: skipMemoRequiredCheck, response: response)
+    }
+    
+    open func submitFeeBumpTransaction(transaction:FeeBumpTransaction, response:@escaping TransactionPostResponseClosure) throws {
+        let envelope = try transaction.encodedEnvelope()
+        //print(envelope)
+        postTransactionCore(transactionEnvelope: envelope, response: { (result) -> (Void) in
+            switch result {
+            case .success(let transaction):
+                response(.success(details: transaction))
+            case .failure(let error):
+                response(.failure(error: error))
+            case .destinationRequiresMemo(let destinationAccountId):
+                response(.destinationRequiresMemo(destinationAccountId: destinationAccountId))
+            }
+        })
     }
     
     open func postTransaction(transactionEnvelope:String, skipMemoRequiredCheck:Bool = false, response:@escaping TransactionPostResponseClosure) {
@@ -134,12 +148,12 @@ public class TransactionsService: NSObject {
         for operation in transaction.operations {
             
             var destination = ""
-            if let paymentOp = operation as? PaymentOperation {
-                destination = paymentOp.destination.accountId
-            } else if let paymentOp = operation as? PathPaymentOperation {
-                destination = paymentOp.destination.accountId
-            } else if let accountMergeOp = operation as? AccountMergeOperation {
-                destination = accountMergeOp.destination.accountId
+            if let paymentOp = operation as? PaymentOperation, paymentOp.destinationAccountId.hasPrefix("G") {
+                destination = paymentOp.destinationAccountId
+            } else if let paymentOp = operation as? PathPaymentOperation, paymentOp.destinationAccountId.hasPrefix("G") {
+                destination = paymentOp.destinationAccountId
+            } else if let accountMergeOp = operation as? AccountMergeOperation, accountMergeOp.destinationAccountId.hasPrefix("G") {
+                destination = accountMergeOp.destinationAccountId
             }
             
             if destination.isEmpty || destinations.contains(destination) {
@@ -164,25 +178,6 @@ public class TransactionsService: NSObject {
                 response(.failure(error: error))
             }
         })
-    }
-    
-    open func getAccountDetails(accountId: String, response: @escaping AccountResponseClosure) {
-        let requestPath = "/accounts/\(accountId)"
-        
-        serviceHelper.GETRequestWithPath(path: requestPath) { (result) -> (Void) in
-            switch result {
-            case .success(let data):
-                do {
-                    let responseMessage = try self.jsonDecoder.decode(AccountResponse.self, from: data)
-                    response(.success(details:responseMessage))
-                } catch {
-                    response(.failure(error: .parsingResponseFailed(message: error.localizedDescription)))
-                }
-                
-            case .failure(let error):
-                response(.failure(error:error))
-            }
-        }
     }
     
     private func checkMemoRequiredForDestinations(destinations: [String], response:@escaping CheckMemoRequiredResponseClosure) {
@@ -269,7 +264,7 @@ public class TransactionsService: NSObject {
             }
         }
         
-        let streamItem = TransactionsStreamItem(baseURL: serviceHelper.baseURL, subpath:subpath)
+        let streamItem = TransactionsStreamItem(requestUrl: serviceHelper.requestUrlWithPath(path: subpath))
         return streamItem
     }
     
@@ -286,7 +281,7 @@ public class TransactionsService: NSObject {
             requestPath += "?\(pathParams)"
         }
         
-        getTransactionsFromUrl(url:serviceHelper.baseURL + requestPath, response:response)
+        getTransactionsFromUrl(url:serviceHelper.requestUrlWithPath(path: requestPath), response:response)
     }
     
     open func getTransactionsFromUrl(url:String, response:@escaping PageResponse<TransactionResponse>.ResponseClosure) {

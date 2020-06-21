@@ -57,7 +57,7 @@ open class AccountService: NSObject {
     ///     - other 'HorizonRequestError' errors depending on the error case.
     ///
     open func getAccountDetails(accountId: String, response: @escaping AccountResponseClosure) {
-        let requestPath = "/accounts/\(accountId)"
+        var requestPath = "/accounts/\(accountId)"
         
         serviceHelper.GETRequestWithPath(path: requestPath) { (result) -> (Void) in
             switch result {
@@ -170,7 +170,7 @@ open class AccountService: NSObject {
             requestPath += "?\(pathParams)"
         }
         
-        getAccountsFromUrl(url:serviceHelper.baseURL + requestPath, response:response)
+        getAccountsFromUrl(url:serviceHelper.requestUrlWithPath(path: requestPath), response:response)
     }
     
     /// Loads accounts for a given url if valid. E.g. for a "next" link from a PageResponse<AccountResponse> object.
